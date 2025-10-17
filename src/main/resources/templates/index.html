@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống đặt lịch hẹn</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+<header class="header">
+    <div class="container">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-calendar-check"></i> Đặt lịch hẹn
+            </div>
+            <nav class="nav">
+                <div id="guest-nav" style="display: none;">
+                    <a href="#" onclick="showLoginModal()">
+                        <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                    </a>
+                    <a href="#" onclick="showRegisterModal()">
+                        <i class="fas fa-user-plus"></i> Đăng ký
+                    </a>
+                </div>
+                <div id="user-nav" style="display: none;">
+                    <a href="#" onclick="showBookingSection()">
+                        <i class="fas fa-plus-circle"></i> Đặt lịch mới
+                    </a>
+                    <a href="#" onclick="showBookingsSection()">
+                        <i class="fas fa-list"></i> Lịch hẹn của tôi
+                    </a>
+                    <a href="#" onclick="showUserSection()">
+                        <i class="fas fa-user"></i> Thông tin cá nhân
+                    </a>
+                    <a href="#" id="enable-notifications-button">
+                        <i class="fas fa-bell"></i> Nhận thông báo
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<main class="main-content">
+    <div class="container">
+        <section id="bookingSection" class="booking-section">
+            <div class="booking-steps">
+                <div class="step active" id="step1">
+                    <i class="fas fa-list"></i> Chọn dịch vụ
+                </div>
+                <div class="step" id="step2">
+                    <i class="fas fa-clock"></i> Chọn thời gian
+                </div>
+                <div class="step" id="step3">
+                    <i class="fas fa-check"></i> Xác nhận
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>
+                    <i class="fas fa-list"></i> Chọn dịch vụ
+                </h2>
+                <p>Vui lòng chọn dịch vụ bạn muốn đặt lịch:</p>
+                <div id="servicesContainer" class="services-grid">
+                </div>
+            </div>
+
+            <div id="timeSelection" class="section" style="display: none;">
+                <h2>
+                    <i class="fas fa-clock"></i> Chọn thời gian
+                </h2>
+                <p>Chọn khung giờ phù hợp với bạn:</p>
+                <div id="timeSlotsContainer">
+                </div>
+            </div>
+
+            <div id="bookingSummary" class="section" style="display: none;">
+            </div>
+        </section>
+
+        <section id="bookingsSection" class="section" style="display: none;">
+            <h2>
+                <i class="fas fa-list"></i> Lịch hẹn của tôi
+            </h2>
+            <div id="userBookings">
+            </div>
+        </section>
+
+        <section id="userSection" class="section" style="display: none;">
+            <h2>
+                <i class="fas fa-user"></i> Thông tin cá nhân
+            </h2>
+            <div id="userInfo">
+            </div>
+
+            <div class="mt-3">
+                <button class="btn btn-warning" onclick="showUserRegistrationModal()">
+                    <i class="fas fa-edit"></i> Cập nhật thông tin
+                </button>
+                <button class="btn btn-secondary" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </section>
+    </div>
+</main>
+
+<footer style="background-color: #333; color: white; text-align: center; padding: 2rem 0; margin-top: 4rem;">
+    <div class="container">
+        <p>&copy; 2024 Hệ thống đặt lịch hẹn. Tất cả quyền được bảo lưu.</p>
+        <p>Liên hệ: support@booking.com | Hotline: 1900-xxxx</p>
+    </div>
+</footer>
+
+<script src="/js/booking.js"></script>
+
+<script>
+    // Navigation functions (giữ nguyên)
+    function showBookingSection() {
+        hideAllSections();
+        document.getElementById('bookingSection').style.display = 'block';
+        resetBooking();
+    }
+
+    function showBookingsSection() {
+        hideAllSections();
+        document.getElementById('bookingsSection').style.display = 'block';
+        loadUserBookings();
+    }
+
+    function showUserSection() {
+        hideAllSections();
+        document.getElementById('userSection').style.display = 'block';
+        updateUserInfo();
+    }
+
+    function hideAllSections() {
+        document.getElementById('bookingSection').style.display = 'none';
+        document.getElementById('bookingsSection').style.display = 'none';
+        document.getElementById('userSection').style.display = 'none';
+    }
+
+    function logout() {
+        if (confirm('Bạn có chắc muốn đăng xuất?')) {
+            localStorage.removeItem('bookingUser');
+            currentUser = null;
+            showGuestNav();
+            hideAllSections();
+            showBookingSection();
+            showAlert('Đã đăng xuất', 'info');
+        }
+    }
+
+    // Initialize with booking section
+    document.addEventListener('DOMContentLoaded', function() {
+        showBookingSection();
+    });
+</script>
+
+<script type="module" th:src="@{/js/firebase-init.js}"></script>
+
+</body>
+</html>

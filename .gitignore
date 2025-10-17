@@ -1,0 +1,16 @@
+.env
+
+firebase-service-account.json
+
+mysql-ca.pem
+
+/target/
+
+*.log
+.log.
+
+.idea/
+.vscode/
+*.iml
+*.iws
+
