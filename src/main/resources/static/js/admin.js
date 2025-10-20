@@ -1,4 +1,4 @@
-// admin.js (Phiên bản đầy đủ chức năng CRUD)
+// admin.js (Phiên bản đầy đủ chức năng CRUD và đã sửa lỗi)
 
 // --- BIẾN TOÀN CỤC ---
 let allBookings = [], allServices = [], allTimeSlots = [], allUsers = [];
@@ -7,7 +7,7 @@ let currentBookingFilter = ''; // Biến để lưu trạng thái lọc
 // --- KHỞI TẠO VÀ ĐIỀU HƯỚNG ---
 document.addEventListener('DOMContentLoaded', function() {
     setupAdminEventListeners();
-    // Bắt đầu với tab tổng quan hoặc tab đặt lịch nếu muốn
+    // Bắt đầu với tab đặt lịch để thấy giao diện mới ngay
     switchAdminTab('bookingsTab');
 });
 
@@ -19,7 +19,6 @@ function setupAdminEventListeners() {
         });
     });
 
-    // Gán sự kiện cho bộ lọc trạng thái
     const filterSelect = document.querySelector('select[onchange="filterBookingsByStatus(this.value)"]');
     if (filterSelect) {
         filterSelect.addEventListener('change', () => filterBookingsByStatus(filterSelect.value));
@@ -46,7 +45,7 @@ function switchAdminTab(tabId) {
     }
 }
 
-// --- LOGIC QUẢN LÝ ĐẶT LỊCH ---
+// --- LOGIC QUẢN LÝ ĐẶT LỊCH (Giao diện thẻ mới) ---
 
 async function loadAllBookings() {
     const container = document.getElementById('allBookings');
@@ -54,14 +53,12 @@ async function loadAllBookings() {
     container.innerHTML = '<p>Đang tải dữ liệu, vui lòng chờ...</p>';
 
     try {
-        // SỬA DUY NHẤT DÒNG NÀY
+        // !!! LƯU Ý: Đảm bảo đường dẫn API '/api/admin/bookings' là chính xác
         const response = await fetch('/api/admin/bookings');
-
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         allBookings = await response.json();
-        // Sắp xếp lịch hẹn mới nhất lên đầu
-        allBookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        allBookings.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         displayAllBookings();
     } catch (error) {
@@ -83,58 +80,51 @@ function displayAllBookings() {
         return;
     }
 
-    container.innerHTML = `
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Khách hàng</th>
-                        <th>Dịch vụ</th>
-                        <th>Thời gian</th>
-                        <th>Trạng thái</th>
-                        <th class="text-right">Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${filteredBookings.map(booking => `
-                        <tr>
-                            <td><strong>#${booking.id}</strong></td>
-                            <td>
-                                <div>${booking.userFullName}</div>
-                                <small class="text-muted">${booking.userPhone}</small>
-                            </td>
-                            <td>${booking.serviceName}</td>
-                            <td>
-                                <div>${formatDisplayDate(booking.date)}</div>
-                                <small>${formatTime(booking.startTime)} - ${formatTime(booking.endTime)}</small>
-                            </td>
-                            <td>
-                                <span class="badge ${getStatusClass(booking.status)}">${booking.statusDisplayName}</span>
-                            </td>
-                            <td class="admin-actions text-right">
-                                ${renderBookingActions(booking)}
-                            </td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
+    container.innerHTML = filteredBookings.map(booking => `
+        <div class="booking-card slide-up">
+            <div class="booking-card-header">
+                <div class="booking-id">ID: #${booking.id}</div>
+                <div class="booking-status">
+                    <span class="badge ${getStatusClass(booking.status)}">${booking.statusDisplayName}</span>
+                </div>
+            </div>
+            <div class="booking-card-body">
+                <div class="booking-info">
+                    <p class="info-item">
+                        <i class="fas fa-user"></i>
+                        <strong>${booking.userFullName}</strong>
+                        <span class="text-muted">(${booking.userPhone})</span>
+                    </p>
+                    <p class="info-item">
+                        <i class="fas fa-concierge-bell"></i>
+                        <span>${booking.serviceName}</span>
+                    </p>
+                    <p class="info-item">
+                        <i class="fas fa-calendar-alt"></i>
+                        <strong>${formatDisplayDate(booking.date)}</strong>
+                        <span>, lúc ${formatTime(booking.startTime)} - ${formatTime(booking.endTime)}</span>
+                    </p>
+                </div>
+                <div class="booking-actions">
+                    ${renderBookingActions(booking)}
+                </div>
+            </div>
         </div>
-    `;
+    `).join('');
 }
 
 function renderBookingActions(booking) {
     let actions = '';
     if (booking.status === 'PENDING') {
-        actions += `<button class="btn btn-success btn-sm" onclick="handleConfirm(${booking.id})">Xác nhận</button>`;
+        actions += `<button class="btn btn-success" onclick="handleConfirm(${booking.id})"><i class="fas fa-check"></i> Xác nhận</button>`;
     }
     if (booking.status === 'CONFIRMED') {
-        actions += `<button class="btn btn-info btn-sm" onclick="handleComplete(${booking.id})">Hoàn thành</button>`;
+        actions += `<button class="btn btn-info" onclick="handleComplete(${booking.id})"><i class="fas fa-flag-checkered"></i> Hoàn thành</button>`;
     }
     if (booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED') {
-        actions += `<button class="btn btn-danger btn-sm" onclick="handleCancel(${booking.id})">Hủy lịch</button>`;
+        actions += `<button class="btn btn-danger" onclick="handleCancel(${booking.id})"><i class="fas fa-times"></i> Hủy lịch</button>`;
     }
-    return actions || '<span class="text-muted small">Không có</span>';
+    return actions || '<span class="text-muted small">Không có hành động</span>';
 }
 
 function filterBookingsByStatus(status) {
@@ -150,7 +140,7 @@ async function handleConfirm(bookingId) {
         if (!response.ok) throw new Error('Thao tác thất bại');
         hideLoading();
         showAlert('Xác nhận lịch hẹn thành công!', 'success');
-        loadAllBookings(); // Tải lại danh sách
+        loadAllBookings();
     } catch (error) {
         hideLoading();
         showAlert(error.message, 'danger');
@@ -159,12 +149,11 @@ async function handleConfirm(bookingId) {
 
 async function handleCancel(bookingId) {
     const reason = prompt(`Nhập lý do hủy cho lịch hẹn #${bookingId}:`, "Bác sĩ có việc đột xuất");
-    if (reason === null) return; // Người dùng nhấn cancel
+    if (reason === null) return;
     if (!reason.trim()) {
         showAlert('Vui lòng nhập lý do hủy.', 'warning');
         return;
     }
-
     try {
         showLoading('Đang hủy lịch...');
         const response = await fetch(`/api/bookings/${bookingId}/cancel?reason=${encodeURIComponent(reason)}`, { method: 'PUT' });
@@ -193,15 +182,135 @@ async function handleComplete(bookingId) {
     }
 }
 
+// --- LOGIC CÁC TAB KHÁC (ĐÃ BỔ SUNG) ---
+
+async function loadAllServices() {
+    const container = document.getElementById('allServices');
+    if (!container) return;
+    container.innerHTML = '<p>Đang tải danh sách dịch vụ...</p>';
+    try {
+        // !!! LƯU Ý: Đảm bảo đường dẫn API '/api/admin/services' là chính xác
+        const response = await fetch('/api/admin/services');
+        if (!response.ok) throw new Error('Không thể tải dịch vụ');
+        allServices = await response.json();
+        displayAllServices();
+    } catch (error) {
+        console.error("Failed to load services:", error);
+        container.innerHTML = `<div class="alert alert-danger">Lỗi: ${error.message}. Vui lòng kiểm tra lại đường dẫn API.</div>`;
+    }
+}
+
+function displayAllServices() {
+    const container = document.getElementById('allServices');
+    if (!container) return;
+
+    if (allServices.length === 0) {
+        container.innerHTML = '<p class="text-center mt-4">Chưa có dịch vụ nào được thêm.</p>';
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="service-cards-container">
+            ${allServices.map(service => `
+                <div class="service-manage-card slide-up">
+                    <div class="service-info">
+                        <div class="service-name">
+                            <i class="fas fa-concierge-bell"></i>
+                            <strong>${service.name}</strong>
+                            <small class="text-muted">(ID: #${service.id})</small>
+                        </div>
+                        <div class="service-details">
+                            <span class="service-detail-item">
+                                <i class="fas fa-tag"></i>
+                                ${formatPrice(service.price)} VNĐ
+                            </span>
+                            <span class="service-detail-item">
+                                <i class="fas fa-clock"></i>
+                                ${service.durationMinutes} phút
+                            </span>
+                        </div>
+                    </div>
+                    <div class="service-actions">
+                        <button class="btn btn-warning" onclick="alert('Chức năng Sửa dịch vụ #${service.id} đang được phát triển')">
+                            <i class="fas fa-pencil-alt"></i> Sửa
+                        </button>
+                        <button class="btn btn-danger" onclick="alert('Chức năng Xóa dịch vụ #${service.id} đang được phát triển')">
+                            <i class="fas fa-trash-alt"></i> Xóa
+                        </button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+async function loadAllTimeSlots() {
+    const container = document.getElementById('allTimeSlots');
+    if (!container) return;
+    container.innerHTML = '<p>Đang tải danh sách khung giờ...</p>';
+    try {
+        // !!! LƯU Ý: Đảm bảo đường dẫn API '/api/admin/timeslots' là chính xác
+        const response = await fetch('/api/admin/timeslots');
+        if (!response.ok) throw new Error('Không thể tải khung giờ');
+        allTimeSlots = await response.json();
+        displayAllTimeSlots();
+    } catch (error) {
+        console.error("Failed to load time slots:", error);
+        container.innerHTML = `<div class="alert alert-danger">Lỗi: ${error.message}. Vui lòng kiểm tra lại đường dẫn API.</div>`;
+    }
+}
+
+function displayAllTimeSlots() {
+    const container = document.getElementById('allTimeSlots');
+    if (allTimeSlots.length === 0) {
+        container.innerHTML = '<p class="text-center mt-4">Chưa có khung giờ nào được tạo.</p>';
+        return;
+    }
+    const slotsByDate = allTimeSlots.reduce((acc, slot) => {
+        const date = slot.date;
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(slot);
+        return acc;
+    }, {});
+
+    container.innerHTML = Object.keys(slotsByDate).sort((a, b) => new Date(b) - new Date(a)).map(date => `
+        <div class="card mb-3">
+            <div class="card-header">${formatDisplayDate(date)}</div>
+            <div class="card-body">
+                <div class="time-slots">
+                    ${slotsByDate[date].map(slot => `
+                        <div class="time-slot ${slot.isBooked ? 'unavailable' : ''}">
+                            ${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function loadDashboardStats() {
+    const container = document.getElementById('dashboardStats');
+    if (container) container.innerHTML = '<p>Chức năng tổng quan sẽ được phát triển sớm.</p>';
+}
+
+function loadAllUsers() {
+    const container = document.getElementById('allUsers');
+    if (container) container.innerHTML = '<p>Chức năng quản lý người dùng sẽ được phát triển sớm.</p>';
+}
+
+
 // --- CÁC HÀM TIỆN ÍCH ---
 function formatPrice(price) {
+    if (typeof price !== 'number') return 'N/A';
     return new Intl.NumberFormat('vi-VN').format(price);
 }
 
 function formatDisplayDate(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', { weekday: 'short', year: 'numeric', month: 'numeric', day: 'numeric' });
+    const options = { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' };
+    return date.toLocaleDateString('vi-VN', options);
 }
 
 function formatTime(timeString) {
@@ -221,20 +330,16 @@ function getStatusClass(status) {
 }
 
 function showAlert(message, type = 'info') {
-    const alertContainer = document.body;
     const alertId = `alert-${Date.now()}`;
     const alert = document.createElement('div');
     alert.id = alertId;
-    alert.className = `app-alert alert-${type} fade-in`;
+    alert.className = `admin-alert alert-${type} fade-in`; // Use admin-alert class
     alert.innerHTML = message;
-    alertContainer.appendChild(alert);
+    document.body.appendChild(alert);
 
     setTimeout(() => {
         const el = document.getElementById(alertId);
-        if (el) {
-            el.classList.add('fade-out');
-            el.addEventListener('transitionend', () => el.remove());
-        }
+        if (el) el.remove();
     }, 4000);
 }
 
@@ -255,14 +360,10 @@ function showLoading(message) {
 
 function hideLoading() {
     const loading = document.getElementById('loadingModal');
-    if (loading) {
-        loading.remove();
-    }
+    if (loading) loading.remove();
 }
 
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.remove();
-    }
+    if (modal) modal.remove();
 }
