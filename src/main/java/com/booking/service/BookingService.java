@@ -5,6 +5,7 @@ import com.booking.entity.Booking;
 import com.booking.entity.TimeSlot;
 import com.booking.entity.User;
 import com.booking.repository.BookingRepository;
+import com.booking.repository.ServiceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -172,5 +173,39 @@ public class BookingService {
     
     public List<Booking> findBookingsPendingConfirmation() {
         return bookingRepository.findBookingsPendingConfirmation();
+    }
+
+    // Thêm phương thức này để lấy tất cả booking
+    public List<Booking> findAll() {
+        return bookingRepository.findAll();
+    }
+
+    // Thêm phương thức này để admin hủy lịch hẹn
+    public void cancelBookingByAdmin(Long bookingId, String reason) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        // Chuyển trạng thái booking
+        booking.setStatus(Booking.BookingStatus.CANCELLED);
+
+        // Mở lại khung giờ cho người khác đặt
+        TimeSlot timeSlot = booking.getTimeSlot();
+        timeSlot.setAvailable(true);
+        // Do BookingService không trực tiếp gọi TimeSlotRepository,
+        // chúng ta sẽ gọi qua TimeSlotService.
+        timeSlotService.save(timeSlot);
+
+        bookingRepository.save(booking);
+
+        // Gửi thông báo cho người dùng (nếu có NotificationService)
+        notificationService.sendBookingCancellation(booking, reason);
+    }
+
+    // Thêm phương thức này để admin đánh dấu lịch hẹn đã hoàn thành
+    public void completeBooking(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+        booking.setStatus(Booking.BookingStatus.COMPLETED);
+        bookingRepository.save(booking);
     }
 }

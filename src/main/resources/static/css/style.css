@@ -496,3 +496,5 @@ body {
         transform: translateY(0);
     }
 }
+
+.admin-alert { position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 15px; border-radius: 5px; }

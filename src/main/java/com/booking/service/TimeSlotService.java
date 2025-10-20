@@ -85,4 +85,9 @@ public class TimeSlotService {
             }
         }
     }
+
+    // Thêm phương thức này để lấy tất cả khung giờ
+    public List<TimeSlot> findAll() {
+        return timeSlotRepository.findAll();
+    }
 }

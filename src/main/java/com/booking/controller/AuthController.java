@@ -1,33 +1,58 @@
 package com.booking.controller;
 
+import com.booking.entity.User;
+import com.booking.service.UserService;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 
-/**
- * Controller này chịu trách nhiệm hiển thị các trang giao diện người dùng
- * liên quan đến xác thực (đăng nhập, đăng ký).
- */
 @Controller
 public class AuthController {
 
-    /**
-     * Xử lý yêu cầu GET để hiển thị trang đăng nhập.
-     * @return Tên của file HTML template (login.html)
-     */
+    private final UserService userService;
+
+    public AuthController(UserService userService) {
+        this.userService = userService;
+    }
+
     @GetMapping("/login")
     public String showLoginPage() {
-        return "login"; // Trả về view tên là "login"
+        return "login";
     }
 
+    // === THÊM LẠI PHƯƠNG THỨC NÀY ===
     /**
-     * Xử lý yêu cầu GET để hiển thị trang đăng ký.
-     * (Giả sử bạn có một trang đăng ký tên là register.html)
-     * @return Tên của file HTML template (register.html)
+     * Xử lý yêu cầu GET để hiển thị trang admin.
+     * Spring Security sẽ đảm bảo chỉ user có quyền ADMIN mới vào được đây.
+     * @return Tên của file HTML template (admin.html)
      */
+    @GetMapping("/admin")
+    public String showAdminPage() {
+        return "admin";
+    }
+    // ===================================
+
     @GetMapping("/register")
-    public String showRegistrationPage() {
-        // Bạn cần tạo một file register.html trong thư mục templates
-        return "register"; 
+    public String showRegistrationForm(Model model) {
+        model.addAttribute("user", new User());
+        return "register";
+    }
+
+    @PostMapping("/register")
+    public String processRegistration(@ModelAttribute("user") User user, Model model) {
+        try {
+            userService.registerUser(
+                    user.getFullName(),
+                    user.getEmail(),
+                    user.getPassword(),
+                    user.getPhoneNumber()
+            );
+            return "redirect:/login?success";
+        } catch (RuntimeException e) {
+            model.addAttribute("error", e.getMessage());
+            return "register";
+        }
     }
 }
-

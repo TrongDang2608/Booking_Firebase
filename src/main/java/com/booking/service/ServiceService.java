@@ -74,4 +74,9 @@ public class ServiceService {
         service.setIsActive(true);
         save(service);
     }
+
+    // Thêm phương thức này để lấy tất cả dịch vụ
+    public List<com.booking.entity.Service> findAll() {
+        return serviceRepository.findAll();
+    }
 }

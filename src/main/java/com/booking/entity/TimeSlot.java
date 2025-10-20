@@ -113,6 +113,10 @@ public class TimeSlot {
         this.bookings = bookings;
     }
 
+    public void setAvailable(boolean available) {
+        this.isAvailable = available;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
