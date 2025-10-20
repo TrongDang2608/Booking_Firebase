@@ -21,65 +21,66 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/bookings")
 @CrossOrigin(origins = "*")
 public class BookingController {
-    
+
     private final BookingService bookingService;
     private final UserService userService;
-    
+
     public BookingController(BookingService bookingService, UserService userService) {
         this.bookingService = bookingService;
         this.userService = userService;
     }
-    
+
     @PostMapping
     public ResponseEntity<?> createBooking(@Valid @RequestBody BookingRequest request) {
         try {
-            Booking booking = bookingService.createBooking(
-                request.getUserId(),
-                request.getServiceId(),
-                request.getTimeSlotId(),
-                request.getNotes()
+            // Sửa ở đây: Nhận thẳng BookingResponse từ service
+            BookingResponse response = bookingService.createBooking(
+                    request.getUserId(),
+                    request.getServiceId(),
+                    request.getTimeSlotId(),
+                    request.getNotes()
             );
-            
-            BookingResponse response = BookingResponse.fromBooking(booking);
+
+            // Trả về response đã nhận được
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
-            
+
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getBooking(@PathVariable Long id) {
         try {
             Booking booking = bookingService.findById(id)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
-            
+
             BookingResponse response = BookingResponse.fromBooking(booking);
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getUserBookings(@PathVariable Long userId) {
         try {
             User user = userService.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-            
+
             List<Booking> bookings = bookingService.findByUser(user);
             List<BookingResponse> responses = bookings.stream()
                 .map(BookingResponse::fromBooking)
                 .collect(Collectors.toList());
-            
+
             return ResponseEntity.ok(responses);
-            
+
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/date/{date}")
     public ResponseEntity<?> getBookingsByDate(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
@@ -88,14 +89,14 @@ public class BookingController {
             List<BookingResponse> responses = bookings.stream()
                 .map(BookingResponse::fromBooking)
                 .collect(Collectors.toList());
-            
+
             return ResponseEntity.ok(responses);
-            
+
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/date-range")
     public ResponseEntity<?> getBookingsByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -105,14 +106,14 @@ public class BookingController {
             List<BookingResponse> responses = bookings.stream()
                 .map(BookingResponse::fromBooking)
                 .collect(Collectors.toList());
-            
+
             return ResponseEntity.ok(responses);
-            
+
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/status/{status}")
     public ResponseEntity<?> getBookingsByStatus(@PathVariable String status) {
         try {
@@ -121,59 +122,78 @@ public class BookingController {
             List<BookingResponse> responses = bookings.stream()
                 .map(BookingResponse::fromBooking)
                 .collect(Collectors.toList());
-            
+
             return ResponseEntity.ok(responses);
-            
+
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         }
     }
-    
+
     @PutMapping("/{id}/confirm")
     public ResponseEntity<?> confirmBooking(@PathVariable Long id) {
         try {
             Booking booking = bookingService.confirmBooking(id);
             BookingResponse response = BookingResponse.fromBooking(booking);
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         }
     }
-    
+
     @PutMapping("/{id}/cancel")
     public ResponseEntity<?> cancelBooking(@PathVariable Long id, @RequestParam String reason) {
         try {
             Booking booking = bookingService.cancelBooking(id, reason);
             BookingResponse response = BookingResponse.fromBooking(booking);
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         }
     }
-    
+
     @PutMapping("/{id}/reschedule")
     public ResponseEntity<?> rescheduleBooking(@PathVariable Long id, @RequestParam Long newTimeSlotId) {
         try {
             Booking booking = bookingService.rescheduleBooking(id, newTimeSlotId);
             BookingResponse response = BookingResponse.fromBooking(booking);
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         }
     }
-    
+
     private static class ErrorResponse {
         private String error;
-        
+
         public ErrorResponse(String error) {
             this.error = error;
         }
-        
+
         public String getError() {
             return error;
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<List<BookingResponse>> getAllBookings() {
+        List<Booking> bookings = bookingService.findAll();
+        List<BookingResponse> responses = bookings.stream()
+                .map(BookingResponse::fromBooking)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(responses);
+    }
+
+    @PutMapping("/{id}/complete")
+    public ResponseEntity<?> completeBooking(@PathVariable Long id) {
+        try {
+            bookingService.completeBooking(id);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         }
     }
 }

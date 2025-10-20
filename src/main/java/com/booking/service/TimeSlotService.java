@@ -90,4 +90,11 @@ public class TimeSlotService {
     public List<TimeSlot> findAll() {
         return timeSlotRepository.findAll();
     }
+
+    public void deleteTimeSlot(Long id) {
+        if (!timeSlotRepository.existsById(id)) {
+            throw new RuntimeException("TimeSlot not found with id: " + id);
+        }
+        timeSlotRepository.deleteById(id);
+    }
 }

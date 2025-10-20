@@ -2,6 +2,7 @@ package com.booking.controller;
 
 import com.booking.entity.Service;
 import com.booking.service.ServiceService;
+import com.booking.dto.ServiceRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -46,28 +47,19 @@ public class ServiceController {
     @PostMapping
     public ResponseEntity<?> createService(@RequestBody ServiceRequest request) {
         try {
-            Service service = serviceService.createService(
-                request.getName(),
-                request.getDescription(),
-                request.getPrice(),
-                request.getDurationMinutes()
-            );
+            // Truyền thẳng đối tượng request, không cần tách lẻ
+            Service service = serviceService.createService(request);
             return ResponseEntity.ok(service);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         }
     }
-    
+
     @PutMapping("/{id}")
     public ResponseEntity<?> updateService(@PathVariable Long id, @RequestBody ServiceRequest request) {
         try {
-            Service service = serviceService.updateService(
-                id,
-                request.getName(),
-                request.getDescription(),
-                request.getPrice(),
-                request.getDurationMinutes()
-            );
+            // Truyền thẳng đối tượng request
+            Service service = serviceService.updateService(id, request);
             return ResponseEntity.ok(service);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
@@ -94,25 +86,25 @@ public class ServiceController {
         }
     }
     
-    private static class ServiceRequest {
-        private String name;
-        private String description;
-        private BigDecimal price;
-        private Integer durationMinutes;
-        
-        // Getters and setters
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        
-        public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
-        
-        public BigDecimal getPrice() { return price; }
-        public void setPrice(BigDecimal price) { this.price = price; }
-        
-        public Integer getDurationMinutes() { return durationMinutes; }
-        public void setDurationMinutes(Integer durationMinutes) { this.durationMinutes = durationMinutes; }
-    }
+//    private static class ServiceRequest {
+//        private String name;
+//        private String description;
+//        private BigDecimal price;
+//        private Integer durationMinutes;
+//
+//        // Getters and setters
+//        public String getName() { return name; }
+//        public void setName(String name) { this.name = name; }
+//
+//        public String getDescription() { return description; }
+//        public void setDescription(String description) { this.description = description; }
+//
+//        public BigDecimal getPrice() { return price; }
+//        public void setPrice(BigDecimal price) { this.price = price; }
+//
+//        public Integer getDurationMinutes() { return durationMinutes; }
+//        public void setDurationMinutes(Integer durationMinutes) { this.durationMinutes = durationMinutes; }
+//    }
     
     private static class ErrorResponse {
         private String error;

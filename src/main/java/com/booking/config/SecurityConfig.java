@@ -40,7 +40,8 @@ public class SecurityConfig {
                                 "/register",
                                 "/css/**",
                                 "/js/**",
-                                "/api/**" // Cho phép các API công khai
+                                "/api/**",
+                                "/firebase-messaging-sw.js" // <--- ĐÃ THÊM DÒNG NÀY
                         ).permitAll()
                         .requestMatchers("/admin", "/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

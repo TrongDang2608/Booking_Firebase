@@ -44,4 +44,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.timeSlot.date = :date AND b.status IN :statuses")
     long countBookingsByDateAndStatus(@Param("date") LocalDate date, @Param("statuses") List<Booking.BookingStatus> statuses);
+
+    long countByStatus(Booking.BookingStatus status);
+    long countByTimeSlotDate(LocalDate date);
 }

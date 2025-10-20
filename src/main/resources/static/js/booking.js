@@ -514,24 +514,28 @@ function showBookingSuccess(booking) {
                     <span class="summary-value">#${booking.id}</span>
                 </div>
                 <div class="summary-row">
+                    <span class="summary-label">Khách hàng:</span>
+                    <span class="summary-value">${booking.userFullName}</span>
+                </div>
+                <div class="summary-row">
                     <span class="summary-label">Dịch vụ:</span>
-                    <span class="summary-value">${booking.service.name}</span>
+                    <span class="summary-value">${booking.serviceName}</span>
                 </div>
                 <div class="summary-row">
                     <span class="summary-label">Ngày:</span>
-                    <span class="summary-value">${formatDisplayDate(booking.timeSlot.date)}</span>
+                    <span class="summary-value">${formatDisplayDate(booking.date)}</span>
                 </div>
                 <div class="summary-row">
                     <span class="summary-label">Thời gian:</span>
-                    <span class="summary-value">${formatTime(booking.timeSlot.startTime)} - ${formatTime(booking.timeSlot.endTime)}</span>
+                    <span class="summary-value">${formatTime(booking.startTime)} - ${formatTime(booking.endTime)}</span>
                 </div>
                 <div class="summary-row">
                     <span class="summary-label">Trạng thái:</span>
-                    <span class="summary-value">${booking.status}</span>
+                    <span class="summary-value">${booking.statusDisplayName}</span>
                 </div>
             </div>
             <div class="alert alert-info">
-                <strong>Lưu ý:</strong> Bạn sẽ nhận được thông báo xác nhận qua email và thông báo nhắc nhở trước buổi hẹn.
+                <strong>Lưu ý:</strong> Lịch hẹn của bạn đang ở trạng thái "Chờ xác nhận". Vui lòng đợi quản trị viên duyệt.
             </div>
             <button class="btn btn-primary" onclick="closeModal('successModal'); resetBooking();">
                 Đóng
@@ -665,21 +669,21 @@ function displayUserBookings(bookings) {
 
     bookings.forEach(booking => {
         const bookingCard = document.createElement('div');
-        bookingCard.className = 'card';
+        bookingCard.className = 'card mb-3'; // Thêm margin-bottom
 
         const statusClass = getStatusClass(booking.status);
 
         bookingCard.innerHTML = `
-            <div class="card-header">
-                <strong>${booking.service.name}</strong>
-                <span class="badge ${statusClass}">${booking.status}</span>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>${booking.serviceName}</strong>
+                <span class="badge ${statusClass}">${booking.statusDisplayName}</span>
             </div>
             <div class="card-body">
-                <p><strong>Ngày:</strong> ${formatDisplayDate(booking.timeSlot.date)}</p>
-                <p><strong>Thời gian:</strong> ${formatTime(booking.timeSlot.startTime)} - ${formatTime(booking.timeSlot.endTime)}</p>
-                <p><strong>Giá:</strong> ${formatPrice(booking.service.price)} VNĐ</p>
+                <p><strong>Ngày:</strong> ${formatDisplayDate(booking.date)}</p>
+                <p><strong>Thời gian:</strong> ${formatTime(booking.startTime)} - ${formatTime(booking.endTime)}</p>
+                <p><strong>Giá:</strong> ${formatPrice(booking.servicePrice)} VNĐ</p>
                 ${booking.notes ? `<p><strong>Ghi chú:</strong> ${booking.notes}</p>` : ''}
-                <p><strong>Đặt lịch lúc:</strong> ${formatDateTime(booking.createdAt)}</p>
+                <p class="text-muted small"><strong>Đặt lịch lúc:</strong> ${formatDateTime(booking.createdAt)}</p>
             </div>
         `;
 
