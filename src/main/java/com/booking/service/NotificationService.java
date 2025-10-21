@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,9 +21,11 @@ public class NotificationService {
     private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
     
     private final FirebaseMessaging firebaseMessaging;
-    
-    public NotificationService(FirebaseMessaging firebaseMessaging) {
+    private final UserService userService;
+
+    public NotificationService(FirebaseMessaging firebaseMessaging, UserService userService) {
         this.firebaseMessaging = firebaseMessaging;
+        this.userService = userService; // <-- Dòng này sẽ khởi tạo và sửa lỗi
     }
     
     public void sendBookingConfirmation(Booking booking) {
@@ -115,8 +118,11 @@ public class NotificationService {
             log.info("Notification sent successfully to token: {}", fcmToken);
             
         } catch (Exception e) {
-            log.error("Failed to send notification to token: {}", fcmToken, e);
-            throw new RuntimeException("Failed to send notification", e);
+            // Thay vì ném lỗi ra ngoài, chúng ta chỉ ghi log lại
+            log.error("Failed to send notification to token: {}. Reason: {}", fcmToken, e.getMessage());
+
+            // Dòng này gây ra lỗi rollback
+            // throw new RuntimeException("Failed to send notification", e);
         }
     }
     
@@ -129,10 +135,23 @@ public class NotificationService {
         data.put("status", booking.getStatus().name());
         return data;
     }
-    
+
     public void sendBroadcastNotification(String title, String body, Map<String, String> data) {
-        // This method can be used to send notifications to all users
-        // Implementation depends on your requirements
-        log.info("Broadcast notification sent: {}", title);
+        log.info("Starting to send broadcast notification with title: {}", title);
+
+        // Lấy danh sách tất cả người dùng có FCM token
+        List<User> usersToNotify = userService.findUsersWithFcmTokens();
+
+        if (usersToNotify.isEmpty()) {
+            log.warn("No users with FCM tokens found. Broadcast cancelled.");
+            return;
+        }
+
+        // Lặp qua danh sách và gửi thông báo cho từng người
+        for (User user : usersToNotify) {
+            sendNotification(user.getFcmToken(), title, body, data);
+        }
+
+        log.info("Successfully sent broadcast notification to {} users.", usersToNotify.size());
     }
 }

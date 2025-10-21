@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map; // <-- THÊM IMPORT NÀY
+import java.util.HashMap; // <-- THÊM IMPORT NÀY
 import java.util.Optional;
 
 @Service
@@ -17,9 +19,11 @@ import java.util.Optional;
 public class ServiceService {
 
     private final ServiceRepository serviceRepository;
+    private final NotificationService notificationService; // <-- THÊM DÒNG NÀY
 
-    public ServiceService(ServiceRepository serviceRepository) {
+    public ServiceService(ServiceRepository serviceRepository, NotificationService notificationService) {
         this.serviceRepository = serviceRepository;
+        this.notificationService = notificationService;
     }
 
     public com.booking.entity.Service save(com.booking.entity.Service service) {
@@ -44,8 +48,21 @@ public class ServiceService {
         service.setDescription(request.getDescription());
         service.setPrice(request.getPrice());
         service.setDurationMinutes(request.getDurationMinutes());
-        service.setIsActive(request.isActive());
-        return save(service);
+        //service.setIsActive(request.isActive());
+
+        // 1. Lưu dịch vụ mới vào CSDL
+        com.booking.entity.Service savedService = save(service);
+
+        // 2. Gửi thông báo hàng loạt sau khi lưu thành công
+        String title = "Dịch vụ mới tại phòng khám!";
+        String body = String.format("Chúng tôi vừa ra mắt dịch vụ mới: %s. Hãy khám phá và đặt lịch ngay!", savedService.getName());
+        Map<String, String> data = new HashMap<>();
+        data.put("type", "NEW_SERVICE_ANNOUNCEMENT");
+        data.put("serviceId", savedService.getId().toString());
+
+        notificationService.sendBroadcastNotification(title, body, data);
+
+        return savedService;
     }
 
     public com.booking.entity.Service updateService(Long id, ServiceRequest request) {
